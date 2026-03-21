@@ -1,29 +1,13 @@
 import { execSync } from "node:child_process";
-import type { Tool } from "./types.js";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
-export const searchCodeTool: Tool = {
-  name: "search_code",
-  description: "在代码文件中搜索匹配的文本或正则表达式。返回匹配的文件名和行。",
-  parameters: [
-    {
-      name: "pattern",
-      type: "string",
-      description: "搜索的文本或正则表达式",
-      required: true,
-    },
-    {
-      name: "path",
-      type: "string",
-      description: "搜索的目录路径，默认为当前目录",
-      required: false,
-    },
-  ],
-  async execute(args) {
-    const searchPath = args.path || ".";
-    const pattern = args.pattern;
+export const searchCodeTool = tool(
+  async ({ pattern, path: searchPath }) => {
+    const dir = searchPath || ".";
     try {
       const result = execSync(
-        `grep -rn --include='*.ts' --include='*.js' --include='*.json' --include='*.md' --include='*.tsx' --include='*.jsx' --include='*.py' --include='*.go' --include='*.rs' ${JSON.stringify(pattern)} ${JSON.stringify(searchPath)}`,
+        `grep -rn --include='*.ts' --include='*.js' --include='*.json' --include='*.md' --include='*.tsx' --include='*.jsx' --include='*.py' --include='*.go' --include='*.rs' ${JSON.stringify(pattern)} ${JSON.stringify(dir)}`,
         {
           cwd: process.cwd(),
           encoding: "utf-8",
@@ -40,4 +24,12 @@ export const searchCodeTool: Tool = {
       return "没有找到匹配结果";
     }
   },
-};
+  {
+    name: "search_code",
+    description: "在代码文件中搜索匹配的文本或正则表达式。返回匹配的文件名和行。",
+    schema: z.object({
+      pattern: z.string().describe("搜索的文本或正则表达式"),
+      path: z.string().optional().describe("搜索的目录路径，默认为当前目录"),
+    }),
+  }
+);

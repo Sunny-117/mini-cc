@@ -1,20 +1,11 @@
 import { execSync } from "node:child_process";
-import type { Tool } from "./types.js";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
-export const runCommandTool: Tool = {
-  name: "run_command",
-  description: "执行 shell 命令并返回输出。超时 30 秒。",
-  parameters: [
-    {
-      name: "command",
-      type: "string",
-      description: "要执行的 shell 命令",
-      required: true,
-    },
-  ],
-  async execute(args) {
+export const runCommandTool = tool(
+  async ({ command }) => {
     try {
-      const result = execSync(args.command, {
+      const result = execSync(command, {
         cwd: process.cwd(),
         encoding: "utf-8",
         timeout: 30000,
@@ -32,4 +23,11 @@ export const runCommandTool: Tool = {
       return `命令执行失败: ${err instanceof Error ? err.message : String(err)}`;
     }
   },
-};
+  {
+    name: "run_command",
+    description: "执行 shell 命令并返回输出。超时 30 秒。",
+    schema: z.object({
+      command: z.string().describe("要执行的 shell 命令"),
+    }),
+  }
+);

@@ -1,10 +1,24 @@
-import type { Message } from "ollama";
-import { chat } from "../llm/ollama.js";
-import { tools, toolMap } from "../tools/index.js";
-import { buildSystemPrompt } from "./prompt.js";
-import { parseModelOutput } from "./parser.js";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { MemorySaver } from "@langchain/langgraph";
+import { HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
+import { createLLM } from "../llm/ollama.js";
+import { tools } from "../tools/index.js";
 
-const MAX_ITERATIONS = 15;
+const SYSTEM_PROMPT = `你是一个强大的代码助手 Agent，可以通过工具来帮助用户完成各种编程任务。
+当前工作目录: ${process.cwd()}
+
+核心原则：
+- 当用户要求创建、编写、生成文件时，你必须使用 write_file 工具将内容写入文件，绝对不要只是在回复中展示代码
+- 当用户要求查看文件时，你必须使用 read_file 工具，不要猜测文件内容
+- 不要在回复中说"我不能执行此操作"，你拥有完整的工具能力来完成任务
+
+规则：
+1. 必须通过工具来读取、写入文件，不要凭空猜测文件内容
+2. 用中文回复用户
+3. 执行命令前要考虑安全性
+4. 如果工具执行失败，分析原因并尝试其他方案
+5. 文件路径必须使用相对路径（如 "index.html" 或 "./src/app.ts"），不要使用以 "/" 开头的绝对路径`;
 
 export type AgentEventType = "thinking" | "tool_call" | "tool_result" | "response" | "error";
 
@@ -16,88 +30,82 @@ export interface AgentEvent {
 
 export type AgentCallback = (event: AgentEvent) => void;
 
+const checkpointer = new MemorySaver();
+
+const agent = createReactAgent({
+  llm: createLLM(),
+  tools,
+  prompt: SYSTEM_PROMPT,
+  checkpointer,
+});
+
 export async function runAgent(
   userMessage: string,
-  history: Message[],
+  threadId: string,
   callback?: AgentCallback
-): Promise<{ response: string; history: Message[] }> {
-  const systemPrompt = buildSystemPrompt(tools);
+): Promise<string> {
+  callback?.({ type: "thinking", data: "" });
 
-  const messages: Message[] = [
-    { role: "system", content: systemPrompt },
-    ...history,
-    { role: "user", content: userMessage },
-  ];
+  try {
+    const config = { configurable: { thread_id: threadId } };
+    const input = { messages: [new HumanMessage(userMessage)] };
 
-  for (let i = 0; i < MAX_ITERATIONS; i++) {
-    const rawOutput = await chat({ messages });
+    let finalResponse = "";
 
-    const parsed = parseModelOutput(rawOutput);
-
-    if (parsed.thinking) {
-      callback?.({ type: "thinking", data: parsed.thinking });
-    }
-
-    if (!parsed.toolCall) {
-      // 没有工具调用，这是最终回复
-      const finalText = parsed.text || rawOutput;
-      callback?.({ type: "response", data: finalText });
-
-      // 更新对话历史
-      const newHistory: Message[] = [
-        ...history,
-        { role: "user", content: userMessage },
-        { role: "assistant", content: finalText },
-      ];
-
-      return { response: finalText, history: newHistory };
-    }
-
-    // 有工具调用
-    const { name, args } = parsed.toolCall;
-    callback?.({
-      type: "tool_call",
-      data: JSON.stringify(args),
-      toolName: name,
+    // Use streamEvents for granular event handling
+    const eventStream = agent.streamEvents(input, {
+      ...config,
+      version: "v2",
     });
 
-    const tool = toolMap.get(name);
-    let toolResult: string;
-    if (!tool) {
-      toolResult = `错误：未知工具 "${name}"。可用工具: ${tools.map((t) => t.name).join(", ")}`;
-    } else {
-      try {
-        toolResult = await tool.execute(args);
-      } catch (err: unknown) {
-        toolResult = `工具执行错误: ${err instanceof Error ? err.message : String(err)}`;
+    for await (const event of eventStream) {
+      if (event.event === "on_chat_model_end") {
+        const output = event.data?.output;
+        if (output && "tool_calls" in output && output.tool_calls?.length > 0) {
+          for (const tc of output.tool_calls) {
+            callback?.({
+              type: "tool_call",
+              data: JSON.stringify(tc.args),
+              toolName: tc.name,
+            });
+          }
+        } else if (output && typeof output.content === "string" && output.content) {
+          finalResponse = output.content;
+          callback?.({ type: "response", data: finalResponse });
+        }
+      }
+
+      if (event.event === "on_tool_end") {
+        const output = event.data?.output;
+        if (output) {
+          const content = typeof output.content === "string" ? output.content : JSON.stringify(output.content);
+          const preview = content.length > 500
+            ? content.slice(0, 500) + "... (已截断)"
+            : content;
+          callback?.({
+            type: "tool_result",
+            data: preview,
+            toolName: output.name || event.name,
+          });
+        }
       }
     }
 
-    callback?.({
-      type: "tool_result",
-      data: toolResult.length > 500
-        ? toolResult.slice(0, 500) + "... (已截断)"
-        : toolResult,
-      toolName: name,
-    });
+    return finalResponse || "（无回复）";
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
 
-    // 将助手回复和工具结果加入消息
-    messages.push({ role: "assistant", content: rawOutput });
-    messages.push({
-      role: "user",
-      content: `<tool_result>\n${toolResult}\n</tool_result>`,
-    });
+    if (errorMsg.includes("ECONNREFUSED") || errorMsg.includes("fetch failed")) {
+      const { getModel } = await import("../llm/ollama.js");
+      const hint =
+        "\n❌ 无法连接到 Ollama。请确保 Ollama 已启动：\n" +
+        "   ollama serve\n" +
+        `   ollama pull ${getModel()}\n`;
+      callback?.({ type: "error", data: hint });
+      throw new Error(hint);
+    }
+
+    callback?.({ type: "error", data: errorMsg });
+    throw err;
   }
-
-  // 超过最大迭代次数
-  const errorMsg = "已达到最大迭代次数，请尝试简化你的请求。";
-  callback?.({ type: "error", data: errorMsg });
-
-  const newHistory: Message[] = [
-    ...history,
-    { role: "user", content: userMessage },
-    { role: "assistant", content: errorMsg },
-  ];
-
-  return { response: errorMsg, history: newHistory };
 }

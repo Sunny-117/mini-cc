@@ -1,8 +1,8 @@
 import * as readline from "node:readline";
+import * as crypto from "node:crypto";
 import { Command } from "commander";
 import chalk from "chalk";
 import ora from "ora";
-import type { Message } from "ollama";
 import { runAgent, type AgentCallback } from "../agent/agent.js";
 import { getModel } from "../llm/ollama.js";
 
@@ -43,7 +43,7 @@ async function chatLoop() {
   );
   console.log(chalk.gray("输入你的问题，输入 /exit 退出，/clear 清除历史\n"));
 
-  let history: Message[] = [];
+  let threadId = crypto.randomUUID();
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -66,7 +66,7 @@ async function chatLoop() {
     }
 
     if (trimmed === "/clear") {
-      history = [];
+      threadId = crypto.randomUUID();
       console.log(chalk.gray("对话历史已清除。\n"));
       continue;
     }
@@ -75,10 +75,9 @@ async function chatLoop() {
     const callback = createAgentCallback(spinner);
 
     try {
-      const result = await runAgent(trimmed, history, callback);
-      history = result.history;
+      const response = await runAgent(trimmed, threadId, callback);
       spinner.stop();
-      console.log(chalk.white("\n" + result.response + "\n"));
+      console.log(chalk.white("\n" + response + "\n"));
     } catch (err: unknown) {
       spinner.stop();
       console.log(
@@ -93,11 +92,12 @@ async function chatLoop() {
 async function askOnce(query: string) {
   const spinner = ora({ text: "思考中...", color: "cyan" }).start();
   const callback = createAgentCallback(spinner);
+  const threadId = crypto.randomUUID();
 
   try {
-    const result = await runAgent(query, [], callback);
+    const response = await runAgent(query, threadId, callback);
     spinner.stop();
-    console.log(chalk.white("\n" + result.response + "\n"));
+    console.log(chalk.white("\n" + response + "\n"));
   } catch (err: unknown) {
     spinner.stop();
     console.error(
