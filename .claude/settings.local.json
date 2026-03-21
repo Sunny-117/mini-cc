@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(ollama list:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:js.langchain.com)",
+      "WebFetch(domain:registry.npmjs.org)",
+      "Read(//private/tmp/**)",
+      "WebFetch(domain:unpkg.com)",
+      "WebFetch(domain:langchain-ai.github.io)"
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "mini-cc",
+  "version": "0.1.0",
+  "description": "Mini Claude Code - 本地代码助手 CLI",
+  "type": "module",
+  "bin": {
+    "mini-cc": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "ollama": "^0.5.12",
+    "commander": "^13.1.0",
+    "chalk": "^5.4.1",
+    "ora": "^8.2.0",
+    "glob": "^11.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "tsx": "^4.19.3",
+    "@types/node": "^22.13.10"
+  }
+}
