@@ -2,11 +2,11 @@
 
 [![Release](https://img.shields.io/github/v/release/Sunny-117/mini-cc)](https://github.com/Sunny-117/mini-cc/releases/tag/v0.1.2)
 
-一个基于本地 Ollama 模型的代码助手 CLI 工具。支持文件读写、代码搜索、命令执行等能力，通过 ReAct 循环实现智能工具调用。
-
+一个基于本地 Ollama 模型的代码助手 CLI 工具。集成 LangChain.js，使用模型原生 tool calling 能力实现可靠的工具调用。
 ## Release
 
-- [v0.1.2](https://github.com/Sunny-117/mini-cc/releases/tag/v0.1.2) - 通过 ReAct 循环实现智能工具调用
+- [v0.1.2](https://github.com/Sunny-117/mini-cc/releases/tag/v0.1.2) - 通过 ReAct 循环实现智能工具调用 - 一个基于本地 Ollama 模型的代码助手 CLI 工具。支持文件读写、代码搜索、命令执行等能力，通过 ReAct 循环实现智能工具调用。
+
 
 ## 前置要求
 
@@ -26,7 +26,7 @@ brew install ollama
 ollama serve
 
 # 拉取默认模型
-ollama pull deepseek-r1
+ollama pull qwen2.5
 ```
 
 ### 2. 安装依赖
@@ -57,7 +57,7 @@ pnpm dev
 进入交互式对话，可以连续提问：
 
 ```
-🤖 Mini Claude Code (模型: deepseek-r1)
+🤖 Mini Claude Code (模型: qwen2.5)
 输入你的问题，输入 /exit 退出，/clear 清除历史
 
 ❯ 列出当前目录的文件
@@ -103,15 +103,15 @@ npx tsx src/index.ts ask "帮我创建一个 hello.ts 文件"
 
 ### 切换模型
 
-通过环境变量 `MINI_CC_MODEL` 指定模型：
+通过环境变量 `MINI_CC_MODEL` 指定模型（需支持原生 tool calling）：
 
 ```bash
-MINI_CC_MODEL=qwen2.5 pnpm dev
-MINI_CC_MODEL=llama3 pnpm dev
-MINI_CC_MODEL=codellama pnpm dev
+MINI_CC_MODEL=qwen2.5:14b pnpm dev
+MINI_CC_MODEL=llama3.1 pnpm dev
+MINI_CC_MODEL=mistral pnpm dev
 ```
 
-默认模型：`deepseek-r1`
+默认模型：`qwen2.5`
 
 ### 自定义 Ollama 地址
 
@@ -143,18 +143,15 @@ mini-cc/
 │   ├── index.ts            # 入口
 │   ├── cli/index.ts        # CLI 交互
 │   ├── agent/
-│   │   ├── agent.ts        # ReAct 循环
-│   │   ├── parser.ts       # 模型输出解析
-│   │   └── prompt.ts       # 系统提示词
+│   │   └── agent.ts        # LangGraph ReAct Agent
 │   ├── tools/
-│   │   ├── types.ts        # Tool 接口
 │   │   ├── readFile.ts     # read_file
 │   │   ├── writeFile.ts    # write_file
 │   │   ├── listFiles.ts    # list_files
 │   │   ├── searchCode.ts   # search_code
 │   │   ├── runCommand.ts   # run_command
-│   │   └── index.ts        # 工具注册表
-│   └── llm/ollama.ts       # Ollama 客户端
+│   │   └── index.ts        # 工具导出
+│   └── llm/ollama.ts       # ChatOllama 封装
 ├── docs/                   # 设计文档
 ├── package.json
 └── tsconfig.json
@@ -176,10 +173,12 @@ pnpm start
 ## 技术栈
 
 - **TypeScript** + **Node.js** (ESM)
+- **LangChain.js** — LLM 框架（`@langchain/core`, `@langchain/ollama`）
+- **LangGraph** — Agent 编排（`@langchain/langgraph`，`createReactAgent`）
 - **Ollama** — 本地 LLM 推理
+- **Zod** — 工具参数 schema 定义
 - **Commander** — CLI 框架
 - **chalk** + **ora** — 终端 UI
-- 自建 **ReAct 循环**（非 LangChain，因 deepseek-r1 不支持原生 tool calling）
 
 ## 文档
 
