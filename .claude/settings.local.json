@@ -8,7 +8,8 @@
       "WebFetch(domain:registry.npmjs.org)",
       "Read(//private/tmp/**)",
       "WebFetch(domain:unpkg.com)",
-      "WebFetch(domain:langchain-ai.github.io)"
+      "WebFetch(domain:langchain-ai.github.io)",
+      "Bash(chmod:*)"
     ]
   }
 }
