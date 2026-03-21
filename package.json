@@ -1,6 +1,6 @@
 {
   "name": "mini-cc",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Mini Claude Code - 本地代码助手 CLI",
   "type": "module",
   "bin": {
