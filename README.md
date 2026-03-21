@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/Sunny-117/mini-cc)](https://github.com/Sunny-117/mini-cc/releases/tag/v0.1.2)
 
-一个基于本地 Ollama 模型的代码助手 CLI 工具。集成 LangChain.js，使用模型原生 tool calling 能力实现可靠的工具调用。
+🤖 一个基于本地 Ollama 模型的代码助手 CLI 工具。集成 LangChain.js，使用模型原生 tool calling 能力实现可靠的工具调用。
 ## Release
 
 - [v0.1.2](https://github.com/Sunny-117/mini-cc/releases/tag/v0.1.2) - 通过 ReAct 循环实现智能工具调用 - 一个基于本地 Ollama 模型的代码助手 CLI 工具。支持文件读写、代码搜索、命令执行等能力，通过 ReAct 循环实现智能工具调用。
