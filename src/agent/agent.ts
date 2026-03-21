@@ -9,9 +9,16 @@ const SYSTEM_PROMPT = `你是一个强大的代码助手 Agent，可以通过工
 当前工作目录: ${process.cwd()}
 
 核心原则：
-- 当用户要求创建、编写、生成文件时，你必须使用 write_file 工具将内容写入文件，绝对不要只是在回复中展示代码
-- 当用户要求查看文件时，你必须使用 read_file 工具，不要猜测文件内容
+- 修改现有文件时，必须使用 edit_file 工具进行精准替换，禁止使用 write_file 覆盖整个文件
+- 只有创建全新文件时才使用 write_file
+- 当用户要求查看文件时，必须使用 read_file 工具，不要猜测文件内容
 - 不要在回复中说"我不能执行此操作"，你拥有完整的工具能力来完成任务
+
+修改文件的正确流程：
+1. 先用 read_file 读取文件完整内容
+2. 确定需要修改的部分，复制出需要替换的原始文本（必须完全一致，包括缩进和换行）
+3. 使用 edit_file，传入 old_text（原始文本）和 new_text（修改后的文本）
+4. 绝对不要用 write_file 来修改现有文件，这会丢失格式和内容
 
 规则：
 1. 必须通过工具来读取、写入文件，不要凭空猜测文件内容
@@ -79,8 +86,9 @@ export async function runAgent(
         const output = event.data?.output;
         if (output) {
           const content = typeof output.content === "string" ? output.content : JSON.stringify(output.content);
-          const preview = content.length > 500
-            ? content.slice(0, 500) + "... (已截断)"
+          const limit = event.name === "read_file" ? 5000 : 1000;
+          const preview = content.length > limit
+            ? content.slice(0, limit) + "... (已截断)"
             : content;
           callback?.({
             type: "tool_result",

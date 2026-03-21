@@ -22,7 +22,9 @@ export const writeFileTool = tool(
   },
   {
     name: "write_file",
-    description: "将内容写入指定路径的文件。会自动创建不存在的目录。路径相对于当前工作目录。",
+    description:
+      "创建新文件并写入内容。仅用于创建不存在的新文件。" +
+      "如果要修改已有文件，必须使用 edit_file 工具，不要用 write_file 覆盖。",
     schema: z.object({
       path: z.string().describe("要写入的文件路径"),
       content: z.string().describe("要写入的文件内容"),
