@@ -1,9 +1,10 @@
 # Mini Claude Code (mini-cc)
 
-[![Release](https://img.shields.io/github/v/release/Sunny-117/mini-cc)](https://github.com/Sunny-117/mini-cc/releases/tag/v0.1.2)
-[![npm version](https://img.shields.io/npm/v/mini-cc)](https://www.npmjs.com/package/mini-cc)
+[![Release](https://img.shields.io/github/v/release/Sunny-117/mini-cc)](https://github.com/Sunny-117/mini-cc/releases/tag/v0.1.2) [![npm version](https://img.shields.io/npm/v/mini-cc)](https://www.npmjs.com/package/mini-cc)
 
 🤖 一个基于本地 Ollama 模型的代码助手 CLI 工具。集成 LangChain.js，使用模型原生 tool calling 能力实现可靠的工具调用。
+
+![alt text](image.png)
 
 ## 前置要求
 
