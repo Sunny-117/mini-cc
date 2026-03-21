@@ -50,6 +50,11 @@ async function chatLoop() {
     output: process.stdout,
   });
 
+  rl.on("close", () => {
+    console.log(chalk.gray("\n再见！👋"));
+    process.exit(0);
+  });
+
   const question = (prompt: string): Promise<string> =>
     new Promise((resolve) => rl.question(prompt, resolve));
 
@@ -60,9 +65,8 @@ async function chatLoop() {
     if (!trimmed) continue;
 
     if (trimmed === "/exit" || trimmed === "/quit") {
-      console.log(chalk.gray("再见！👋"));
       rl.close();
-      process.exit(0);
+      return;
     }
 
     if (trimmed === "/clear") {

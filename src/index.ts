@@ -3,4 +3,4 @@
 import { createCli } from "./cli/index.js";
 
 const program = createCli();
-await program.parseAsync();
+await program.parseAsync().catch(() => {});
