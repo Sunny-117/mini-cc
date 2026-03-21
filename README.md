@@ -217,12 +217,12 @@ pnpm start
 
 ## 文档
 
-详细设计文档位于 `docs/` 目录：
+详细设计文档位于 `v2-langchain-docs/` 目录：
 
-- [架构设计](docs/architecture.md)
-- [Agent 核心设计](docs/agent.md)
-- [工具系统设计](docs/tools.md)
-- [项目结构说明](docs/project-structure.md)
+- [架构设计](v2-langchain-docs/architecture.md)
+- [Agent 核心设计](v2-langchain-docs/agent.md)
+- [工具系统设计](v2-langchain-docs/tools.md)
+- [项目结构说明](v2-langchain-docs/project-structure.md)
 
 ## 历史版本：通过 ReAct 循环实现智能工具调用
 
