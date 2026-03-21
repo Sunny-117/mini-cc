@@ -5,6 +5,7 @@ import chalk from "chalk";
 import ora from "ora";
 import { runAgent, type AgentCallback } from "../agent/agent.js";
 import { getModel } from "../llm/ollama.js";
+import { setReadline, setSpinner } from "../permission.js";
 
 function createAgentCallback(spinner: ReturnType<typeof ora>): AgentCallback {
   return (event) => {
@@ -50,6 +51,9 @@ async function chatLoop() {
     output: process.stdout,
   });
 
+  // 注入 rl 供 run_command 权限确认使用
+  setReadline(rl);
+
   rl.on("close", () => {
     console.log(chalk.gray("\n再见！👋"));
     process.exit(0);
@@ -76,6 +80,7 @@ async function chatLoop() {
     }
 
     const spinner = ora({ text: "思考中...", color: "cyan", discardStdin: false }).start();
+    setSpinner(spinner);
     const callback = createAgentCallback(spinner);
 
     try {
@@ -89,6 +94,8 @@ async function chatLoop() {
           `\n错误: ${err instanceof Error ? err.message : String(err)}\n`
         )
       );
+    } finally {
+      setSpinner(null);
     }
   }
 }

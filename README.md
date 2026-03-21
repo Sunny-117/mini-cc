@@ -111,6 +111,26 @@ npx tsx src/index.ts ask "帮我创建一个 hello.ts 文件"
 
 ## 配置
 
+### 命令权限控制
+
+默认情况下，所有 shell 命令执行前都需要用户确认。在项目根目录创建 `.mini-cc.json` 可配置命令白名单：
+
+```json
+{
+  "allowedCommands": ["ls", "cat", "git status", "git diff", "git log"]
+}
+```
+
+- 白名单采用**前缀匹配**，如 `"ls"` 可匹配 `ls -la`、`ls src/`
+- 白名单内的命令自动执行，白名单外的命令会提示用户确认：
+
+```
+⚠️  即将执行命令: npm install
+  是否允许执行？(y/N)
+```
+
+- 不创建配置文件时，所有命令都需要确认
+
 ### 切换模型
 
 通过环境变量 `MINI_CC_MODEL` 指定模型（需支持原生 tool calling）：
@@ -140,10 +160,11 @@ Agent 在对话中可以自动调用以下工具：
 | 工具 | 功能 | 限制 |
 |------|------|------|
 | `read_file` | 读取文件内容 | 最大 100KB |
-| `write_file` | 写入/创建文件 | 仅限工作目录内 |
+| `write_file` | 创建新文件 | 仅限工作目录内 |
+| `edit_file` | 精准编辑现有文件（diff/patch 式替换） | 需匹配唯一文本 |
 | `list_files` | glob 模式列出文件 | 排除 node_modules/.git/dist |
 | `search_code` | 搜索代码文本 | 最多 50 条结果 |
-| `run_command` | 执行 shell 命令 | 30 秒超时 |
+| `run_command` | 执行 shell 命令 | 30 秒超时，需用户确认 |
 
 ## 项目结构
 
@@ -151,17 +172,21 @@ Agent 在对话中可以自动调用以下工具：
 mini-cc/
 ├── src/
 │   ├── index.ts            # 入口
+│   ├── config.ts           # 配置文件加载（.mini-cc.json）
+│   ├── permission.ts       # 命令权限确认
 │   ├── cli/index.ts        # CLI 交互
 │   ├── agent/
 │   │   └── agent.ts        # LangGraph ReAct Agent
 │   ├── tools/
 │   │   ├── readFile.ts     # read_file
 │   │   ├── writeFile.ts    # write_file
+│   │   ├── editFile.ts     # edit_file
 │   │   ├── listFiles.ts    # list_files
 │   │   ├── searchCode.ts   # search_code
 │   │   ├── runCommand.ts   # run_command
 │   │   └── index.ts        # 工具导出
 │   └── llm/ollama.ts       # ChatOllama 封装
+├── .mini-cc.json           # 可选配置文件
 ├── docs/                   # 设计文档
 ├── package.json
 └── tsconfig.json

@@ -1,9 +1,19 @@
 import { execSync } from "node:child_process";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { isCommandAllowed } from "../config.js";
+import { confirmCommand } from "../permission.js";
 
 export const runCommandTool = tool(
   async ({ command }) => {
+    // 权限检查：不在白名单中的命令需要用户确认
+    if (!isCommandAllowed(command)) {
+      const allowed = await confirmCommand(command);
+      if (!allowed) {
+        return "用户拒绝执行该命令";
+      }
+    }
+
     try {
       const result = execSync(command, {
         cwd: process.cwd(),
@@ -25,7 +35,9 @@ export const runCommandTool = tool(
   },
   {
     name: "run_command",
-    description: "执行 shell 命令并返回输出。超时 30 秒。",
+    description:
+      "执行 shell 命令并返回输出。超时 30 秒。" +
+      "未在白名单中的命令需要用户确认后才能执行。",
     schema: z.object({
       command: z.string().describe("要执行的 shell 命令"),
     }),
