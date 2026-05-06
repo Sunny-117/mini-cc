@@ -1,0 +1,25 @@
+{
+  "name": "mini-openclaw",
+  "version": "1.0.0",
+  "description": "Mini OpenClaw AI Agent - A minimal viable product",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "esno src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "openai": "^4.77.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
